@@ -1,0 +1,37 @@
+﻿@page "/"
+@using GurleyHealthSite.Data
+@inject SiteService SiteService
+
+<PageTitle>Index</PageTitle>
+
+@if (Sites == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Code</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var site in Sites)
+            {
+                <SiteHealth TheSite=@site></SiteHealth>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    private Site[]? Sites;
+    int count = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Sites = SiteService.GetSites();
+    }
+}

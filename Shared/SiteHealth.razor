@@ -1,0 +1,76 @@
+﻿@using GurleyHealthSite.Data
+<tr style="vertical-align:middle">
+    <td style="height:7vh;width:7vh">
+        <img src="@ImgSrc" style="height:100%;width:100%" />
+    </td>
+    <td>
+        @TheSite.URL
+    </td>
+    <td>
+        @(((int)TheSite.Code) + " - " +TheSite.Code)
+    </td>
+</tr>
+
+@code {
+    private static readonly string Success = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Eo_circle_green_checkmark.svg/2048px-Eo_circle_green_checkmark.svg.png";
+    private static readonly string Warning = "https://upload.wikimedia.org/wikipedia/en/thumb/7/74/Ambox_warning_yellow.svg/2367px-Ambox_warning_yellow.svg.png";
+    private static readonly string Failure = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Red_X.svg/2048px-Red_X.svg.png";
+    private static readonly string InProgress = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/In_progress_icon.svg/1200px-In_progress_icon.svg.png";
+
+    private string ImgSrc { get; set; } = "InProgress";
+
+    [Parameter]
+    public Site TheSite { get; set; }
+    [Parameter]
+    public Task<HttpResponseMessage> TestTask { get; set; }
+
+    public string Status => TheSite.Status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TestTask == null)
+        {
+            TestTask = TheSite.Test();
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var response = await TestTask;
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    TheSite.Status = "Success";
+                else
+                    TheSite.Status = "Fail";
+
+                TheSite.Code = response.StatusCode;
+
+            }
+            catch (Exception ex)
+            {
+                TheSite.Status = "Fail";
+                TheSite.Code = System.Net.HttpStatusCode.InternalServerError;
+            }
+
+            SetImgFromStatus();
+        }
+    }
+    private void SetImgFromStatus()
+    {
+        switch (Status)
+        {
+            case "Fail":
+                ImgSrc = Failure;
+                break;
+            case "Success":
+                ImgSrc = Success;
+                break;
+        }
+
+        StateHasChanged();
+    }
+}
